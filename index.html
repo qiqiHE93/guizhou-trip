@@ -3,18 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2026国庆贵州13天自驾行程</title>
+<title>2026国庆贵州+重庆13天自驾行程</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
+  /* ===== 全局变量 ===== */
   :root {
     --bg: #f7f5f2;
     --card-bg: #ffffff;
     --text: #2d2a26;
     --text-light: #6b6560;
-    --accent: #e67e22; /* 截图中的橙色 */
+    --accent: #e67e22; 
     --border: #e5e0da;
     --tag-bg: #f0ede8;
-    --tag-active-bg: #2c3e50; /* 截图中的深色 */
+    --tag-active-bg: #2c3e50; 
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -23,14 +24,14 @@
   }
   .container { max-width: 720px; margin: 0 auto; padding: 0 16px 80px; }
 
-  /* Header */
+  /* ===== 头部 ===== */
   .header { text-align: center; padding: 48px 0 32px; }
   .header h1 { font-size: 28px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 8px; }
   .header .subtitle { font-size: 14px; color: var(--text-light); margin-bottom: 16px; }
   .header .meta-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
   .header .meta-tags span { background: var(--tag-bg); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--text-light); }
 
-  /* ===== 行程地图模块 ===== */
+  /* ===== 地图模块 ===== */
   .journey-map-section {
     background: var(--card-bg); border-radius: 16px; padding: 24px 20px; margin-bottom: 24px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid var(--border);
@@ -39,7 +40,7 @@
   .journey-map-section .title-area h2 { font-size: 22px; font-weight: 800; color: #1a1a1a; letter-spacing: 0.5px; }
   .journey-map-section .title-area .days-count { font-size: 14px; color: var(--text-light); font-weight: 600; letter-spacing: 1px; }
   
-  /* 省份标签栏 */
+  /* 省份与日期标签 */
   .province-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
   .province-tabs::-webkit-scrollbar { display: none; }
   .province-tabs .p-tab {
@@ -48,7 +49,6 @@
   }
   .province-tabs .p-tab.active { background: var(--tag-active-bg); color: #fff; }
   
-  /* 日期标签栏 */
   .date-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; border-bottom: 1px solid #f0ede8; }
   .date-tabs::-webkit-scrollbar { display: none; }
   .date-tabs .d-tab {
@@ -63,32 +63,56 @@
   /* 地图容器 */
   #map { height: 420px; width: 100%; border-radius: 12px; border: 1px solid var(--border); z-index: 1; background: #e8f0e8; }
   
-  /* 地图下方说明 */
   .map-note { margin-top: 12px; font-size: 11px; color: #b0a89f; display: flex; justify-content: space-between; }
   .map-note a { color: var(--accent); text-decoration: none; }
   .loading-route { font-size: 12px; color: var(--accent); font-weight: 600; display: none; margin-top: 8px; text-align: center; }
 
-  /* 弹出窗样式 */
+  /* 弹出窗 */
   .leaflet-popup-content-wrapper { border-radius: 8px; font-family: inherit; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
   .leaflet-popup-content { margin: 12px 16px; font-size: 13px; color: var(--text); }
   .leaflet-popup-content b { color: var(--accent); font-size: 14px; display: block; margin-bottom: 4px; }
 
   /* 可编辑区域提示 */
   [contenteditable="true"] {
-    outline: none;
-    border-bottom: 1px dashed transparent; /* 默认隐形 */
+    outline: none; border-bottom: 1px dashed transparent;
     transition: border-bottom 0.2s, background 0.2s;
-    padding: 1px 2px; border-radius: 3px;
+    padding: 2px 4px; border-radius: 3px;
+    min-height: 24px; word-break: break-word;
   }
-  [contenteditable="true"]:hover,
-  [contenteditable="true"]:focus {
-    border-bottom: 1px dashed #e67e22; /* 橙色虚线提示可编辑 */
-    background: rgba(230, 126, 34, 0.05);
+  [contenteditable="true"]:hover, [contenteditable="true"]:focus {
+    border-bottom: 1px dashed #e67e22; background: rgba(230, 126, 34, 0.05);
+  }
+  /* 触屏设备 focus 更醒目 */
+  @media (hover: none) {
+    [contenteditable="true"]:hover { border-bottom-color: transparent; background: transparent; }
+    [contenteditable="true"]:focus { border-bottom: 2px solid #e67e22; background: rgba(230, 126, 34, 0.08); }
   }
 
-  /* 每日行程卡片 */
+  /* 同步状态指示器 */
+  .sync-status {
+    position: fixed; top: 12px; right: 12px; z-index: 999;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(8px);
+    padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid var(--border);
+    transition: opacity 0.3s; opacity: 0;
+  }
+  .sync-status.visible { opacity: 1; }
+  .sync-status .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+  .sync-status.syncing .dot { background: #f39c12; animation: pulse 1s infinite; }
+  .sync-status.synced .dot { background: #27ae60; }
+  .sync-status.error .dot { background: #e74c3c; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* 远程更新高亮 */
+  @keyframes remote-flash { 0% { background: rgba(39,174,96,0.2); } 100% { background: transparent; } }
+  .remote-updated { animation: remote-flash 1.5s ease-out; }
+
+  /* ===== 通用标题 ===== */
   .section-title-global { font-size: 18px; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
   .edit-hint { font-size: 12px; color: #b0a89f; font-weight: normal; margin-left: 8px; }
+
+  /* ===== 每日行程卡片 ===== */
   .day-card { background: var(--card-bg); border-radius: 14px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
   .day-card.highlight { border-left: 4px solid var(--accent); }
   .day-card .day-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
@@ -103,32 +127,19 @@
   .day-card .day-body .label { font-weight: 600; color: var(--text); }
   .lodging { display: inline-block; background: #eef6f0; color: #2d6a4f; font-size: 12px; padding: 3px 10px; border-radius: 6px; margin-top: 8px; }
 
-  /* ===== 长途驾驶卡片（横向滑动） ===== */
+  /* ===== 长途驾驶卡片 ===== */
   .notice-banner {
-    background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px;
-    padding: 12px 16px; font-size: 13px; color: #e65100; margin-bottom: 16px;
-    display: flex; align-items: flex-start; gap: 8px; line-height: 1.5;
+    background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #e65100; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5;
   }
   .notice-banner .icon { font-size: 16px; flex-shrink: 0; }
-
   .drive-cards-scroll {
-    display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
-    gap: 16px; padding-bottom: 16px; -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 16px; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
-  .drive-cards-scroll::-webkit-scrollbar { display: none; /* Chrome, Safari */ }
-  
+  .drive-cards-scroll::-webkit-scrollbar { display: none; }
   .drive-card {
-    flex: 0 0 85%; /* 移动端卡片宽度为85%，便于左右翻动 */
-    scroll-snap-align: start;
-    background: var(--card-bg); border-radius: 14px; padding: 18px 20px; border: 1px solid var(--border);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    display: flex; flex-direction: column; justify-content: space-between;
+    flex: 0 0 85%; scroll-snap-align: start; background: var(--card-bg); border-radius: 14px; padding: 18px 20px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;
   }
-  @media (min-width: 600px) {
-    .drive-card { flex: 0 0 45%; } /* 桌面端显示两列 */
-  }
-
+  @media (min-width: 600px) { .drive-card { flex: 0 0 45%; } }
   .drive-card .route-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
   .drive-card .route-name { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
   .drive-card .route-name .arrow { color: var(--accent); font-size: 14px; }
@@ -142,7 +153,7 @@
   .drive-card .fuel-info .icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
   .drive-card .fuel-info .text strong { color: var(--text); }
 
-  /* Checklist & Memo */
+  /* ===== 待办清单 & 备忘录 ===== */
   .checklist { background: var(--card-bg); border-radius: 14px; padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; }
   .checklist .item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0ede8; font-size: 13.5px; }
   .checklist .item:last-child { border-bottom: none; padding-bottom: 0; }
@@ -154,7 +165,10 @@
   .memo-card li { margin-bottom: 4px; }
   .memo-card .warn { color: #c0392b; font-weight: 600; }
   
-  /* 新增物品高亮样式 */
+  /* ===== 美食标签样式 ===== */
+  .food-tag { display: inline-block; background: #e8f0e8; color: #2d6a4f; font-size: 11px; padding: 1px 6px; border-radius: 4px; margin-right: 4px; }
+  .food-location { display: inline-block; background: #e8f0f8; color: #1a5276; font-size: 11px; padding: 1px 6px; border-radius: 4px; margin-right: 4px; }
+  .food-dish { color: #e67e22; font-weight: 600; }
   .add-item { color: #e67e22; font-weight: 600; }
   
   .footer { text-align: center; font-size: 12px; color: #b0a89f; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
@@ -162,44 +176,72 @@
   @media (max-width: 480px) {
     #map { height: 300px; }
     .journey-map-section { padding: 16px; }
-    .province-tabs .p-tab { padding: 6px 12px; font-size: 13px; }
-    .date-tabs .d-tab { padding: 4px 10px; font-size: 11px; }
+    .province-tabs .p-tab { padding: 6px 14px; font-size: 13px; }
+    .date-tabs .d-tab { padding: 5px 12px; font-size: 11px; }
+    .header h1 { font-size: 24px; }
+    .header { padding: 32px 0 24px; }
+    .day-card { padding: 16px; }
+    .day-card .day-badge { width: 38px; height: 38px; }
+    .day-card .day-badge .num { font-size: 16px; }
+    .day-card .day-title { font-size: 15px; }
+    .day-card .day-body { font-size: 13px; }
+    .checklist { padding: 16px; }
+    .checklist .item { font-size: 13px; gap: 8px; }
+    .memo-card { padding: 16px; font-size: 13px; }
+    .drive-card { padding: 14px 16px; }
+    .drive-card .stat .value { font-size: 14px; }
+    .section-title-global { font-size: 16px; margin: 32px 0 12px; }
+    .container { padding: 0 12px 60px; }
+    .sync-status { font-size: 11px; padding: 4px 10px; top: 8px; right: 8px; }
+  }
+  @media (max-width: 360px) {
+    .header h1 { font-size: 20px; }
+    .day-card .day-header { flex-direction: column; gap: 8px; }
+    .drive-card .stats { gap: 6px; }
+    .drive-card .stat { padding: 6px 8px; }
+    .drive-card .stat .value { font-size: 13px; }
+    .drive-card .stat .label { font-size: 9px; }
   }
 </style>
 </head>
 <body>
 <div class="container">
 
+  <!-- 同步状态指示器 -->
+  <div class="sync-status" id="syncStatus">
+    <div class="dot"></div>
+    <span id="syncText">已同步</span>
+  </div>
+
+  <!-- 头部 -->
   <div class="header">
-    <h1>2026国庆 · 贵州自驾</h1>
+    <h1>2026国庆 · 贵州+重庆自驾</h1>
     <div class="subtitle">13天 · 3人 · 深圳南山出发 · 混动自驾</div>
     <div class="meta-tags">
       <span>2026.09.23 – 10.05</span>
       <span>自驾</span>
-      <span>贵州深度游</span>
+      <span>贵州+重庆深度游</span>
       <span>混动车型</span>
     </div>
   </div>
 
-  <!-- ===== 路线图模块 ===== -->
+  <!-- 地图模块 -->
   <div class="journey-map-section">
     <div class="title-area">
       <h2>行程路线</h2>
       <div class="days-count">13 DAYS</div>
     </div>
 
-    <!-- 一级维度：省份 -->
     <div class="province-tabs" id="provinceTabs">
       <div class="p-tab active" data-province="总览">总览</div>
       <div class="p-tab" data-province="广东省">广东省</div>
       <div class="p-tab" data-province="湖南省">湖南省</div>
       <div class="p-tab" data-province="贵州省">贵州省</div>
+      <div class="p-tab" data-province="重庆市">重庆市</div>
+      <div class="p-tab" data-province="广西壮族自治区">广西</div>
     </div>
 
-    <!-- 二级维度：日期 -->
-    <div class="date-tabs" id="dateTabs">
-      <!-- 动态注入 -->
-    </div>
+    <div class="date-tabs" id="dateTabs"></div>
 
     <div id="map"></div>
     <div class="loading-route" id="loadingRoute">正在获取实际道路轨迹...</div>
@@ -209,10 +251,9 @@
     </div>
   </div>
 
-  <!-- ===== 长途驾驶路段（横向滑动） ===== -->
+  <!-- 长途驾驶路段 -->
   <div class="section-title-global">🚗 长途驾驶路段（超过3小时）</div>
   
-  <!-- 国庆高速免费提示 -->
   <div class="notice-banner">
     <div class="icon">🎉</div>
     <div>
@@ -220,10 +261,7 @@
     </div>
   </div>
 
-  <!-- 卡片滑动容器 -->
   <div class="drive-cards-scroll">
-
-    <!-- 路段1 -->
     <div class="drive-card">
       <div class="route-header"><div class="route-name">深圳南山 <span class="arrow">→</span> 永州零陵古城</div><div class="badge-day">9.23 · Day 1</div></div>
       <div class="stats">
@@ -231,10 +269,8 @@
         <div class="stat"><div class="value">7<span class="unit">h16m</span></div><div class="label">预计耗时</div></div>
         <div class="stat"><div class="value">~388<span class="unit"> 元</span></div><div class="label">过路费</div></div>
       </div>
-      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>出发前在深圳加满油。全程约598km，混动车型满油满电续航通常可达700-900km，<strong>中途一般无需补能</strong>。</div></div>
+      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>出发前在深圳加满油。混动车型满油满电续航通常可达700-900km，<strong>中途一般无需补能</strong>。</div></div>
     </div>
-
-    <!-- 路段2 -->
     <div class="drive-card">
       <div class="route-header"><div class="route-name">永州 <span class="arrow">→</span> 梵净山（江口）</div><div class="badge-day">9.24 · Day 2</div></div>
       <div class="stats">
@@ -242,10 +278,8 @@
         <div class="stat"><div class="value">6<span class="unit">h</span></div><div class="label">预计耗时</div></div>
         <div class="stat"><div class="value">~350<span class="unit"> 元</span></div><div class="label">过路费</div></div>
       </div>
-      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>永州出发前加满油。全程约6小时，混动车满油满电可轻松抵达。建议在怀化或铜仁服务区休息时补能。</div></div>
+      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>永州出发前加满油。建议在怀化或铜仁服务区休息时补能。</div></div>
     </div>
-
-    <!-- 路段3 -->
     <div class="drive-card">
       <div class="route-header"><div class="route-name">镇远 <span class="arrow">→</span> 十二背后（绥阳）</div><div class="badge-day">9.27 · Day 5</div></div>
       <div class="stats">
@@ -253,32 +287,35 @@
         <div class="stat"><div class="value">3.5<span class="unit">h</span></div><div class="label">预计耗时</div></div>
         <div class="stat"><div class="value">~260<span class="unit"> 元</span></div><div class="label">过路费</div></div>
       </div>
-      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>镇远出发前加满油。此路段较长，建议在遵义或绥阳服务区休息时视油量决定是否补能。</div></div>
+      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>镇远出发前加满油。建议在遵义或绥阳服务区休息补能。</div></div>
     </div>
-
-    <!-- 路段4 -->
     <div class="drive-card">
-      <div class="route-header"><div class="route-name">黄果树 <span class="arrow">→</span> 荔波</div><div class="badge-day">10.1 · Day 9</div></div>
-      <div class="stats">
-        <div class="stat"><div class="value">~340<span class="unit"> km</span></div><div class="label">预计里程</div></div>
-        <div class="stat"><div class="value">4<span class="unit">h</span></div><div class="label">预计耗时</div></div>
-        <div class="stat"><div class="value">~220<span class="unit"> 元</span></div><div class="label">过路费</div></div>
-      </div>
-      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>关岭冰臼游玩结束后，建议在安顺或贵定服务区加满油再出发。全程约4小时，混动车型满油满电可直达荔波。</div></div>
-    </div>
-
-    <!-- 路段5 -->
-    <div class="drive-card">
-      <div class="route-header"><div class="route-name">肇兴 <span class="arrow">→</span> 柳州</div><div class="badge-day">10.4 · Day 12</div></div>
+      <div class="route-header"><div class="route-name">十二背后 <span class="arrow">→</span> 重庆</div><div class="badge-day">9.28 · Day 6</div></div>
       <div class="stats">
         <div class="stat"><div class="value">~380<span class="unit"> km</span></div><div class="label">预计里程</div></div>
-        <div class="stat"><div class="value">4<span class="unit">h</span></div><div class="label">预计耗时</div></div>
+        <div class="stat"><div class="value">4.5<span class="unit">h</span></div><div class="label">预计耗时</div></div>
         <div class="stat"><div class="value">~240<span class="unit"> 元</span></div><div class="label">过路费</div></div>
       </div>
-      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>肇兴出发前加满油。途经厦蓉高速、三柳高速，建议在三江或融水服务区视油量决定是否补能。柳州加油站密集，抵达后可轻松加油。</div></div>
+      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>出发前在绥阳或温泉镇加满油。进入重庆地界山路增多，建议在綦江或巴南服务区视情况补能。</div></div>
     </div>
-
-    <!-- 路段6 -->
+    <div class="drive-card">
+      <div class="route-header"><div class="route-name">重庆 <span class="arrow">→</span> 贵阳</div><div class="badge-day">9.30 · Day 8</div></div>
+      <div class="stats">
+        <div class="stat"><div class="value">~390<span class="unit"> km</span></div><div class="label">预计里程</div></div>
+        <div class="stat"><div class="value">4.5<span class="unit">h</span></div><div class="label">预计耗时</div></div>
+        <div class="stat"><div class="value">~250<span class="unit"> 元</span></div><div class="label">过路费</div></div>
+      </div>
+      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>重庆出发前加满油。建议在綦江或遵义服务区休息补能。国庆高速免费，但服务区可能排队。</div></div>
+    </div>
+    <div class="drive-card">
+      <div class="route-header"><div class="route-name">贵阳 <span class="arrow">→</span> 柳州</div><div class="badge-day">10.3 · Day 11</div></div>
+      <div class="stats">
+        <div class="stat"><div class="value">~480<span class="unit"> km</span></div><div class="label">预计里程</div></div>
+        <div class="stat"><div class="value">5.5<span class="unit">h</span></div><div class="label">预计耗时</div></div>
+        <div class="stat"><div class="value">~310<span class="unit"> 元</span></div><div class="label">过路费</div></div>
+      </div>
+      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>贵阳出发前加满油。建议在都匀或三江服务区休息补能。柳州加油站密集，抵达后可轻松加油。</div></div>
+    </div>
     <div class="drive-card">
       <div class="route-header"><div class="route-name">柳州 <span class="arrow">→</span> 深圳南山</div><div class="badge-day">10.5 · Day 13</div></div>
       <div class="stats">
@@ -286,165 +323,257 @@
         <div class="stat"><div class="value">7<span class="unit">h</span></div><div class="label">预计耗时</div></div>
         <div class="stat"><div class="value">~387<span class="unit"> 元</span></div><div class="label">过路费</div></div>
       </div>
-      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>柳州出发前加满油。全程约7小时，建议在梧州或肇庆服务区休息加油。国庆返程高峰，服务区可能排队，建议提前规划。</div></div>
+      <div class="fuel-info"><div class="icon">⛽</div><div class="text"><strong>加油建议：</strong>柳州出发前加满油。建议在梧州或肇庆服务区休息加油。国庆返程高峰，服务区可能排队，建议提前规划。</div></div>
     </div>
-
   </div>
-  <!-- 滑动容器结束 -->
 
-  <!-- ===== 每日行程 Timeline ===== -->
+  <!-- 每日行程 -->
   <div class="section-title-global">📅 每日行程 <span class="edit-hint">💡 点击文字可编辑</span></div>
   
   <div class="day-card">
     <div class="day-header"><div class="left"><div class="day-badge"><span class="num">23</span><span class="mon">9月</span></div><div><div class="day-title">深圳 → 永州零陵古城</div><div class="day-sub">周三 · 车程约7.5小时</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">下午：</span>抵达<strong>零陵古城</strong>，逛<strong>柳子街</strong>、<strong>愚溪</strong>、<strong>潇湘平湖</strong>，看古城夜景。</p>
-      <p><span class="label">晚餐：</span><strong>永州血鸭</strong>、<strong>东安鸡</strong>。</p>
-      <div class="lodging">🏨 朵兰悦享酒店（零陵古城旅游区店）</div>
+    <div class="day-body" contenteditable="true" id="v2-day-01">
+      <p>抵达<strong>零陵古城</strong>，逛<strong>柳子街</strong>、<strong>愚溪</strong>。晚餐吃<strong>永州血鸭</strong>、<strong>东安鸡</strong>。</p>
+      <div class="lodging">🏨 朵兰悦享酒店（零陵古城旅游区店）· 9.23-9.24 · 1晚 · 亲子家庭套房</div>
     </div>
   </div>
 
-  <div class="day-card">
-    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">24</span><span class="mon">9月</span></div><div><div class="day-title">永州 → 梵净山</div><div class="day-sub">周四 · 车程约6小时</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p>抵达后入住休息。今晚务必清点身份证，确认<strong>梵净山门票</strong>及<strong>直通车</strong>信息，并确认25号早上从民宿去东门停车场的方案。</p>
-      <div class="lodging">🏨 梵净山歇山静舍民宿（第1晚）</div>
+  <div class="day-card highlight">
+    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">24</span><span class="mon">9月</span></div><div><div class="day-title">永州 → 铜仁 → 梵净山</div><div class="day-sub">周四 · 车程约6小时</div></div></div></div>
+    <div class="day-body" contenteditable="true" id="v2-day-02">
+      <p><span class="label">下午：</span>抵达<strong>铜仁市区</strong>，开启美食之旅。</p>
+      <p><span class="label">晚餐推荐：</span>去<strong>德记鱼府义乌店</strong>吃鱼（强推），或者去<strong>小十字智慧农贸市场</strong>吃覃记猪脚粉，再去<strong>彭勇哥竹签烧烤</strong>撸串。</p>
+      <p><span class="label">饭后甜品：</span>去<strong>廿柒°葉</strong>或<strong>抹山集</strong>吃抹茶冰淇淋。</p>
+      <p><span class="label">傍晚：</span>驱车前往梵净山，入住民宿。清点证件，确认门票与直通车信息。</p>
+      <div class="lodging">🏨 梵净山歇山静舍民宿 · 9.24-9.26 · 2晚 · 如性</div>
     </div>
   </div>
 
   <div class="day-card highlight">
     <div class="day-header"><div class="left"><div class="day-badge"><span class="num">25</span><span class="mon">9月</span></div><div><div class="day-title">梵净山 · 中秋 🌕</div><div class="day-sub">周五 · 西门进，东门索道出</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">06:30：</span>从民宿出发，开车至<strong>东门停车场</strong>停车。</p>
-      <p><span class="label">07:00：</span>乘“<strong>东门→西门直通车</strong>”出发。</p>
-      <p><span class="label">08:00-08:59：</span>刷身份证入园（<strong>西门</strong>），开始徒步登山。西线无索道，轻装上阵。</p>
-      <p><span class="label">登顶：</span><strong>蘑菇石</strong>、<strong>老金顶</strong>（如预约到红云金顶时段则优先）。</p>
-      <p><span class="label">下山：</span>走东线，乘<strong>东门下行索道</strong>下山。出东门后直接在停车场取车，开回民宿。</p>
-      <div class="lodging">🏨 梵净山歇山静舍民宿（第2晚）</div>
+    <div class="day-body" contenteditable="true" id="v2-day-03">
+      <p>06:30从民宿出发，开车至<strong>东门停车场</strong>停车。</p>
+      <p>07:00乘“<strong>东门→西门直通车</strong>”出发。</p>
+      <p>08:00-08:59刷身份证入园（<strong>西门</strong>），开始徒步登山。<strong>西线无索道全程徒步，轻装上阵</strong>。</p>
+      <p>登顶：<strong>蘑菇石</strong>、<strong>老金顶</strong>（如预约到红云金顶时段则优先）。</p>
+      <p>下山：走东线，乘<strong>东门下行索道</strong>下山。出东门后直接在停车场取车，开回民宿。中秋节记得吃月饼！</p>
+      <div class="lodging">🏨 梵净山歇山静舍民宿 · 9.24-9.26 · 第2晚</div>
     </div>
   </div>
 
   <div class="day-card">
     <div class="day-header"><div class="left"><div class="day-badge"><span class="num">26</span><span class="mon">9月</span></div><div><div class="day-title">梵净山 → 杉木河漂流 → 镇远古镇</div><div class="day-sub">周六 · 漂流约3.5小时</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">上午：</span>前往<strong>杉木河漂流下码头</strong>，<strong>9点前抵达终点码头抢车位</strong>。全程9km，终点有免费热水淋浴。备速干衣裤、溯溪鞋、防水袋。</p>
-      <p><span class="label">下午：</span>抵达<strong>镇远古镇</strong>，逛<strong>祝圣桥</strong>、<strong>舞阳河</strong>沿岸，看古城夜景。</p>
-      <div class="lodging">🏨 梵云山舍villa（镇远古城祝圣桥店）</div>
+    <div class="day-body" contenteditable="true" id="v2-day-04">
+      <p>上午前往<strong>杉木河漂流</strong>，<strong>9点前抵达终点码头抢车位</strong>。全程9km，终点有免费热水淋浴。备速干衣裤、溯溪鞋、防水袋。</p>
+      <p>下午抵达<strong>镇远古镇</strong>，逛祝圣桥、舞阳河夜景。</p>
+      <div class="lodging">🏨 梵云山舍villa江景设计师民宿（镇远古城祝圣桥店）· 9.26-9.27 · 1晚 · 听澜临水河景阳台亲子房</div>
     </div>
   </div>
 
   <div class="day-card">
     <div class="day-header"><div class="left"><div class="day-badge"><span class="num">27</span><span class="mon">9月</span></div><div><div class="day-title">镇远 → 十二背后（双河谷）</div><div class="day-sub">周日 · 车程约3.5小时</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">下午：</span>游览<strong>双河谷</strong>（<strong>石膏晶花洞</strong>、<strong>地下河谷泛舟</strong>、<strong>地下钙化梯田</strong>、<strong>天坑瀑布</strong>）。洞内15-18℃，带薄外套。建议买联票（双河谷+地下裂缝 238元）。</p>
-      <p><span class="label">停车：</span>优先停客栈；若满位，停“双河溶洞国家地质公园-地上停车场”（约507米）。</p>
-      <div class="lodging">🏨 绥阳悦居客栈（双河溶洞飞拉达店）</div>
+    <div class="day-body" contenteditable="true" id="v2-day-05">
+      <p>下午游览<strong>双河谷</strong>（石膏晶花洞、地下河谷泛舟、天坑瀑布）。洞内15-18℃，带薄外套。<strong>建议买联票（双河谷+地下裂缝 238元）</strong>。</p>
+      <p>停车优先停客栈；若满位，停“双河溶洞国家地质公园-地上停车场”（约507米）。</p>
+      <p><span class="label">晚餐：</span>在客栈店里吃晚餐，<strong>一定要吃冰浆！</strong></p>
+      <div class="lodging">🏨 绥阳悦居客栈（双河溶洞飞拉达店）· 9.27-9.28 · 1晚 · 双床房+大床房各1间</div>
     </div>
   </div>
 
   <div class="day-card highlight">
-    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">28</span><span class="mon">9月</span></div><div><div class="day-title">飞拉达 → 贵阳</div><div class="day-sub">周一 · 银河洞飞拉达荣耀版</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">08:15：</span>步行至“<strong>十二背后地心酷玩接待处</strong>”（客栈旁）。</p>
-      <p><span class="label">08:30：</span>领装备、安全培训。穿紧身长裤、厚底防滑运动鞋，存包。</p>
-      <p><span class="label">09:00：</span><strong>银河洞飞拉达首班（荣耀版）</strong>。主动走队伍最后面，收尾教练帮拍照。</p>
-      <p><span class="label">11:30-12:00：</span>飞拉达结束，<strong>悬崖咖啡平台</strong>打卡。</p>
-      <p><span class="label">12:00-13:00：</span>回客栈午餐、退房、装车。</p>
-      <p><span class="label">13:00-14:30：</span><strong>地下裂缝</strong>（<em>待定</em>，不去则13:00直接出发贵阳）。</p>
-      <p><span class="label">最晚15:00：</span>出发前往贵阳（约2.5小时）。</p>
-      <p><span class="label">18:00：</span>抵达<strong>一池APOOL</strong>，逛<strong>民生路</strong>、<strong>甲秀楼夜景</strong>。</p>
-      <div class="lodging">🏨 一池APOOL（喷水池民生路店，第1晚）</div>
+    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">28</span><span class="mon">9月</span></div><div><div class="day-title">十二背后 → 重庆</div><div class="day-sub">周一 · 车程约4.5小时</div></div></div></div>
+    <div class="day-body" contenteditable="true" id="v2-day-06">
+      <p>08:15步行至“<strong>十二背后地心酷玩接待处</strong>”（客栈旁）。08:30领装备、安全培训。穿紧身长裤、厚底防滑运动鞋，存包。</p>
+      <p>09:00<strong>银河洞飞拉达首班（荣耀版）</strong>。主动走队伍最后面，收尾教练帮拍照。</p>
+      <p>11:30-12:00飞拉达结束，<strong>悬崖咖啡平台</strong>打卡。</p>
+      <p>12:00-13:00回客栈午餐、退房、装车。</p>
+      <p>13:00-14:30<strong>地下裂缝</strong>（<em>待定</em>，不去则13:00直接出发重庆）。</p>
+      <p><strong>最晚15:00出发前往重庆</strong>（约4.5小时）。</p>
+      <p>傍晚抵达重庆，入住酒店。晚餐去吃<strong>联防食店（黄桷坪店）</strong>或<strong>口味餐</strong>。</p>
+      <div class="lodging">🏨 重庆两江新区新牌坊亚朵S酒店 · 9.28-10.1 · 3晚 · 行政双床房</div>
+    </div>
+  </div>
+
+  <div class="day-card">
+    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">29</span><span class="mon">9月</span></div><div><div class="day-title">重庆市区深度游</div><div class="day-sub">周二 · 山城步道 & 美食</div></div></div></div>
+    <div class="day-body" contenteditable="true" id="v2-day-07">
+      <p><span class="label">上午：</span>乘坐<strong>长江索道</strong>，感受山城空中交通。</p>
+      <p><span class="label">午餐：</span><strong>陈华饭店（环湖路店）</strong>：烧椒茄子鸡丁、糖醋排骨、麻婆豆腐。</p>
+      <p><span class="label">下午：</span>去<strong>江陵茶馆</strong>喝茶。探访金山意库文创园，打卡<strong>LI53咖啡</strong>。</p>
+      <p><span class="label">傍晚：</span>前往<strong>洪崖洞</strong>，在千厮门大桥上看夜景（更完整漂亮）。</p>
+      <p><span class="label">晚上：</span>吃一顿正宗重庆火锅，推荐<strong>孔妈</strong>、<strong>豆芽老火锅</strong>。</p>
+      <p><span class="label">其余时间：</span>自由安排<strong>Citywalk</strong>，感受山城地形。</p>
+      <div class="lodging">🏨 重庆两江新区新牌坊亚朵S酒店 · 9.28-10.1 · 第2晚</div>
+    </div>
+  </div>
+
+  <div class="day-card">
+    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">30</span><span class="mon">9月</span></div><div><div class="day-title">重庆 → 贵阳</div><div class="day-sub">周三 · 车程约4.5小时</div></div></div></div>
+    <div class="day-body" contenteditable="true" id="v2-day-08">
+      <p><span class="label">上午：</span>重庆市区自由活动，可以去<strong>冉家坝咖啡店</strong>或<strong>everglow coffee&life</strong>。</p>
+      <p><span class="label">下午：</span>驱车前往贵阳（约4.5小时）。</p>
+      <p><span class="label">傍晚：</span>抵达贵阳，入住酒店。晚上逛<strong>民生路</strong>，看<strong>甲秀楼夜景</strong>。</p>
+      <div class="lodging">🏨 一池 APOOL（喷水池民生路店）· 9.30-10.2 · 2晚 · 丝绒居所大双床</div>
     </div>
   </div>
 
   <div class="day-card highlight">
-    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">29</span><span class="mon">9月</span></div><div><div class="day-title">贵州省博 + 黔灵山看猴</div><div class="day-sub">周二 · 贵阳Citywalk</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">08:00：</span>从一池APOOL出发去省博（打车/地铁约10-15公里）。</p>
-      <p><span class="label">09:00-12:00：</span><strong>贵州省博物馆（上午场）</strong>，一楼大厅集合，带好3人身份证。</p>
-      <p><span class="label">12:30：</span>打车前往<strong>黔灵山公园南门</strong>（约18分钟）。</p>
-      <p><span class="label">13:00-13:40：</span><strong>南门小吃街</strong>午餐（肠旺面、糯米饭、豆腐圆子）。</p>
-      <p><span class="label">13:40-16:30：</span>黔灵山懒人省力路线：<strong>索道</strong>上山 → <strong>瞰筑亭</strong> → <strong>弘福寺</strong> → <strong>九曲径</strong>下山撸猴群 → 动物园网红老狒。</p>
-      <p><span class="label">17:00-18:30：</span><strong>玉珍酸汤火锅</strong>晚餐。</p>
-      <div class="lodging">🏨 一池APOOL（喷水池民生路店，第2晚）</div>
-    </div>
-  </div>
-
-  <div class="day-card">
-    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">30</span><span class="mon">9月</span></div><div><div class="day-title">贵阳 → 安顺黄果树</div><div class="day-sub">周三 · 车程约2小时</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">下午：</span>抵达<strong>黄果树</strong>，入住酒店休息。</p>
-      <p><span class="label">16:00前：</span>前往黄果树景区，第一次刷身份证入园，激活门票+要客服务。若时间充裕可先逛<strong>陡坡塘</strong>。</p>
-      <p><span class="label">19:30：</span>如果决定看夜游，提前到对应入口检票。<strong>《夜瀑山河绣》</strong>在大瀑布。</p>
-      <div class="lodging">🏨 桔子酒店（安顺黄果树景区龙宫路店）</div>
+    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">1</span><span class="mon">10月</span></div><div><div class="day-title">贵阳市内游玩</div><div class="day-sub">周四 · 国庆节</div></div></div></div>
+    <div class="day-body" contenteditable="true" id="v2-day-09">
+      <p><span class="label">下午：</span>前往<strong>阿云朵仓</strong>打卡，感受贵阳新晋的文艺街区氛围。</p>
+      <p><span class="label">傍晚：</span>入住<strong>一池酒店（黔灵山公园喷水池店）</strong>，去<strong>民生路</strong>吃小吃，看<strong>甲秀楼夜景</strong>。</p>
+      <div class="lodging">🏨 一池酒店（黔灵山公园喷水池店）· 10.1-10.3 · 2晚 · 城景双栖双床房</div>
     </div>
   </div>
 
   <div class="day-card highlight">
-    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">1</span><span class="mon">10月</span></div><div><div class="day-title">黄果树（要客）→ 关岭冰臼 → 荔波</div><div class="day-sub">周四 · 国庆节</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">07:30-08:00：</span>要客小巴接送，直奔<strong>大瀑布</strong>（约2h，水帘洞要客免票发雨衣）。</p>
-      <p><span class="label">10:30-12:00：</span><strong>天星桥下半段</strong>（银链坠瀑布精华段，约1.5h）。</p>
-      <p><span class="label">12:30-13:30：</span>午餐，回酒店退房。</p>
-      <p><span class="label">14:00-16:00：</span><strong>关岭冰臼</strong>。导航“<strong>冰臼山庄</strong>”，最后2km砂砾山路慢行。穿防滑鞋，16:00前撤离。</p>
-      <p><span class="label">16:30：</span>出发前往荔波（约4小时），20:30左右抵达。</p>
-      <div class="lodging">🏨 黔南荔波旅游城长征路亚朵酒店</div>
+    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">2</span><span class="mon">10月</span></div><div><div class="day-title">贵州省博 + 黔灵山看猴</div><div class="day-sub">周五 · 贵阳Citywalk</div></div></div></div>
+    <div class="day-body" contenteditable="true" id="v2-day-10">
+      <p>08:00出发去<strong>贵州省博物馆（上午场）</strong>，带好身份证。<strong>9:30有免费定时讲解，建议跟上</strong>。</p>
+      <p>12:30打车去<strong>黔灵山公园南门</strong>，在南门小吃街吃午餐。</p>
+      <p>13:40-16:30懒人省力路线：<strong>索道</strong>上山 → <strong>瞰筑亭</strong> → <strong>弘福寺</strong> → <strong>九曲径</strong>下山撸猴群 → 动物园网红老狒。</p>
+      <p><strong>⚠️ 防猴守则：</strong>不手提塑料袋、奶茶，零食水瓶装背包，拉链拉紧，背包尽量背胸前。保持2米以上安全距离，不投喂、不逗弄、不对视，不尖叫奔跑。手机不挂颈，帽子墨镜容易被抢。</p>
+      <p>17:00-18:30<strong>玉珍酸汤火锅</strong>晚餐。</p>
+      <div class="lodging">🏨 一池酒店（黔灵山公园喷水池店）· 10.1-10.3 · 第2晚</div>
     </div>
   </div>
 
   <div class="day-card">
-    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">2</span><span class="mon">10月</span></div><div><div class="day-title">荔波小七孔 → 肇兴侗寨</div><div class="day-sub">周五 · 车程约2.5小时</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">08:00-12:30：</span><strong>荔波小七孔</strong>，打卡<strong>卧龙潭</strong>、<strong>水上森林</strong>、<strong>68级跌水瀑布</strong>、<strong>小七孔古桥</strong>。</p>
-      <p><span class="label">14:00-16:30：</span>驱车前往<strong>肇兴侗寨</strong>。</p>
-      <p><span class="label">傍晚：</span>在寨内闲逛，看<strong>鼓楼群</strong>、<strong>风雨桥</strong>，吃侗族特色晚餐（腌鱼、牛瘪、油茶）。</p>
-      <div class="lodging">🏨 肇兴侗寨内民宿（<strong>待预订</strong>）</div>
+    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">3</span><span class="mon">10月</span></div><div><div class="day-title">贵阳 → 柳州</div><div class="day-sub">周六 · 车程约5.5小时</div></div></div></div>
+    <div class="day-body" contenteditable="true" id="v2-day-11">
+      <p><span class="label">上午：</span>贵阳市区出发，前往柳州。</p>
+      <p><span class="label">下午：</span>抵达柳州，入住酒店。</p>
+      <p><span class="label">晚上：</span>吃<strong>柳州螺蛳粉</strong>，去<strong>马鞍山公园</strong>看夜景。</p>
+      <div class="lodging">🏨 全季酒店（柳州柳东体育中心官塘大道店）· 10.3-10.5 · 2晚 · 商务双床房</div>
     </div>
   </div>
 
   <div class="day-card">
-    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">3</span><span class="mon">10月</span></div><div><div class="day-title">堂安梯田 + 肇兴侗寨</div><div class="day-sub">周六 · 梯田金黄季</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">上午：</span>前往<strong>堂安梯田</strong>（肇兴侗寨后山，约5公里）。可坐当地面包车/包车上去，或徒步“<strong>肇兴-堂安古道</strong>”。10月初正值稻谷金黄季，非常出片。</p>
-      <p><span class="label">下午：</span>返回肇兴侗寨，参观<strong>侗族文化展示中心</strong>，看<strong>侗族大歌表演</strong>，体验<strong>蜡染</strong>或侗绣。</p>
-      <p><span class="label">晚上：</span>看肇兴侗寨夜景，鼓楼亮灯后非常壮观。</p>
-      <div class="lodging">🏨 肇兴侗寨内民宿（<strong>待预订</strong>）</div>
-    </div>
-  </div>
-
-  <div class="day-card">
-    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">4</span><span class="mon">10月</span></div><div><div class="day-title">肇兴 → 柳州</div><div class="day-sub">周日 · 车程约4小时</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p><span class="label">下午：</span>抵达<strong>柳州</strong>，入住酒店。</p>
-      <p><span class="label">晚上：</span>吃<strong>柳州螺蛳粉</strong>（五星街或谷埠街），<strong>马鞍山公园</strong>看夜景。</p>
-      <div class="lodging">🏨 全季酒店（柳州柳东体育中心官塘大道店）</div>
+    <div class="day-header"><div class="left"><div class="day-badge"><span class="num">4</span><span class="mon">10月</span></div><div><div class="day-title">柳州自由游玩</div><div class="day-sub">周日 · 螺蛳粉之旅</div></div></div></div>
+    <div class="day-body" contenteditable="true" id="v2-day-12">
+      <p><span class="label">全天：</span>在柳州自由探索，打卡<strong>五星街</strong>或<strong>谷埠街</strong>的螺蛳粉店。</p>
+      <div class="lodging">🏨 全季酒店（柳州柳东体育中心官塘大道店）· 10.3-10.5 · 第2晚</div>
     </div>
   </div>
 
   <div class="day-card">
     <div class="day-header"><div class="left"><div class="day-badge"><span class="num">5</span><span class="mon">10月</span></div><div><div class="day-title">柳州 → 深圳南山</div><div class="day-sub">周一 · 返程</div></div></div></div>
-    <div class="day-body" contenteditable="true">
-      <p>早上8点前出发返程，避开国庆返程最高峰，傍晚抵达<strong>深圳南山</strong>。</p>
-    </div>
+    <div class="day-body" contenteditable="true" id="v2-day-13"><p>早上8点前出发返程，避开国庆返程最高峰，傍晚抵达<strong>深圳南山</strong>。</p></div>
   </div>
 
-  <!-- ===== Checklist ===== -->
+  <!-- 待办清单 -->
   <div class="section-title-global">✅ 出行前待办 <span class="edit-hint">💡 点击文字可编辑</span></div>
-  <div class="checklist" contenteditable="true">
-    <div class="item"><div class="box"></div><div><strong>肇兴侗寨住宿（10.2、10.3两晚）</strong> — 确定“2晚荔波+1晚侗寨”还是“2晚侗寨+1晚荔波”，并尽快预订。</div></div>
-    <div class="item"><div class="box"></div><div><strong>飞拉达预约（9.28 09:00场次）</strong> — 通过“一码游贵州”预约。女儿已是成人，直接选荣耀版主线（1.3m以上）。</div></div>
-    <div class="item"><div class="box"></div><div><strong>黄果树要客套餐与水帘洞</strong> — 在“安旅通”购买388元/人要客套餐。水帘洞每日限流6000人，必须提前在“安旅通”单独预约。</div></div>
-    <div class="item"><div class="box"></div><div><strong>黄果树夜游</strong> — 如果要看《夜瀑山河绣》，需单独购票并提前在“安旅通”预约。</div></div>
-    <div class="item"><div class="box"></div><div><strong>关岭冰臼导航</strong> — 设为“冰臼山庄”或“关岭县断桥镇坡舟村董扎组”，最后2km砂砾山路慢行。</div></div>
-    <div class="item"><div class="box"></div><div><strong>杉木河漂流</strong> — 提前在“黔行施秉”抖音官方号购票，备好速干衣裤、溯溪鞋、防水袋。</div></div>
-    <div class="item"><div class="box"></div><div><strong>黔灵山预约</strong> — 在“黔灵山公园”公众号或“一码游贵州”提前实名预约（免大门票）。</div></div>
+  <div class="checklist" contenteditable="true" id="v2-checklist">
+    <div class="item"><div class="box"></div><div><strong>飞拉达预约（9.28 09:00场次）</strong> — 通过“一码游贵州”预约。</div></div>
+    <div class="item"><div class="box"></div><div><strong>重庆酒店订单核对</strong> — 确认重庆亚朵S酒店的入住日期。</div></div>
+    <div class="item"><div class="box"></div><div><strong>重庆火锅预约</strong> — 豆芽老火锅需要提前预约，孔妈排队较凶，建议错峰。</div></div>
+    <div class="item"><div class="box"></div><div><strong>黔灵山预约</strong> — 在“黔灵山公园”公众号或“一码游贵州”提前实名预约。</div></div>
   </div>
 
-  <!-- ===== Memo ===== -->
+  <!-- 备忘录 -->
   <div class="section-title-global">📌 专项备忘 <span class="edit-hint">💡 点击文字可编辑</span></div>
   
-  <!-- 新增：出行物品清单 -->
-  <div class="memo-card" contenteditable="true">
+  <!-- 铜仁美食 -->
+  <div class="memo-card" contenteditable="true" id="v2-memo-1">
+    <div class="memo-title">🍲 铜仁美食专项清单（市区篇）</div>
+    <p style="font-weight:bold; color:#333; margin-bottom:8px;">🐟 正餐 / 鱼火锅</p>
+    <ul>
+      <li><span class="food-tag">鱼火锅</span><span class="food-location">📍义乌</span><strong>德记鱼府（义乌店）</strong>：132双人套餐，强推！不爱吃鱼人怒喝五碗鱼汤。</li>
+    </ul>
+    <p style="font-weight:bold; color:#333; margin-bottom:8px;">🍵 抹茶 / 甜品</p>
+    <ul>
+      <li><span class="food-tag">甜品</span><span class="food-location">📍古城</span><strong>廿柒°葉</strong>：抹茶很正宗，冰淇淋好吃，<span class="food-dish">荔枝冰抹</span>给到夯，<span class="food-dish">冰椰抹茶</span>一般。</li>
+      <li><span class="food-tag">甜品</span><span class="food-location">📍中南门</span><strong>抹山集</strong>：<span class="food-dish">抹茶流心挞</span>强推，<span class="food-dish">抹茶茉莉</span>绝。</li>
+    </ul>
+    <p style="font-weight:bold; color:#333; margin-bottom:8px;">🍜 小吃 / 烧烤 / 粉面</p>
+    <ul>
+      <li><span class="food-tag">小吃</span><span class="food-location">📍小十字</span><strong>小十字智慧农贸市场</strong>：<span class="food-dish">覃记猪脚粉</span>好吃12块分量很足，<span class="food-dish">豆腐圆子</span>好吃。</li>
+      <li><span class="food-tag">烧烤</span><span class="food-location">📍市区</span><strong>彭勇哥竹签烧烤</strong>：人均60左右，<span class="food-dish">撅粑</span>MVP，软糯入味，必吃！</li>
+    </ul>
+  </div>
+
+  <!-- 重庆美食 -->
+  <div class="memo-card" contenteditable="true" id="v2-memo-2">
+    <div class="memo-title">🍲 重庆美食专项清单（按品类+地点）</div>
+    <p style="font-weight:bold; color:#333; margin-bottom:8px;">🔥 火锅 / 串串类</p>
+    <ul>
+      <li><span class="food-tag">火锅</span><span class="food-location">📍南岸区</span><strong>孔妈老火锅</strong>：牛油锅底，<span class="food-dish">毛肚</span>脆糯挂味。</li>
+      <li><span class="food-tag">火锅</span><span class="food-location">📍南岸区</span><strong>久鑫美蛙鱼头</strong>：牛蛙现杀，必加<span class="food-dish">肥肠和藕片</span>。</li>
+      <li><span class="food-tag">火锅</span><span class="food-location">📍渝中区七星岗</span><strong>满座火锅</strong>：<span class="food-dish">耙牛肉和鲜毛肚</span>比较出彩。</li>
+      <li><span class="food-tag">火锅</span><span class="food-location">📍渝中区七星岗</span><strong>煊火锅</strong>：平价社区火锅，分量实在。</li>
+    </ul>
+    <p style="font-weight:bold; color:#333; margin-bottom:8px;">🍢 烧烤 / 小吃类</p>
+    <ul>
+      <li><span class="food-tag">烧烤</span><span class="food-location">📍南岸区</span><strong>胡记烧烤</strong>：<span class="food-dish">烤苕皮和豆干</span>必点。<span class="warn">建议点外卖。</span></li>
+      <li><span class="food-tag">烧烤</span><span class="food-location">📍南岸区</span><strong>袁三烧烤</strong>：只有<span class="food-dish">烤牛肉串</span>。</li>
+      <li><span class="food-tag">小吃</span><span class="food-location">📍南岸区</span><strong>李歪嘴鱿鱼</strong>：鱿鱼嫩Q弹。</li>
+    </ul>
+    <p style="font-weight:bold; color:#333; margin-bottom:8px;">🥩 牛肉 / 豆花 / 川菜类</p>
+    <ul>
+      <li><span class="food-tag">牛肉馆</span><strong>九九牛肉馆</strong>：<span class="food-dish">泡菜牛肉丝</span>超级下饭。</li>
+      <li><span class="food-tag">豆花牛肉</span><span class="food-location">📍渝中区</span><strong>连裆裤豆花牛肉</strong>：<span class="food-dish">豆花牛肉</span>和<span class="food-dish">粉蒸牛肉</span>。</li>
+      <li><span class="food-tag">川菜</span><span class="food-location">📍渝中区七星岗</span><strong>临华饭庄</strong>：<span class="food-dish">蒜泥白肉</span>和<span class="food-dish">传统回锅肉</span>。</li>
+      <li><span class="food-tag">川菜</span><span class="food-location">📍渝中区</span><strong>神仙口张记饭店</strong>：<span class="food-dish">大盘姜丝兔</span>和<span class="food-dish">盐菜回锅肉</span>。</li>
+      <li><span class="food-tag">蛙/鳝鱼</span><span class="food-location">📍南岸区</span><strong>望城坡自然美酒家</strong>：<span class="food-dish">冷吃蛙</span>是招牌。</li>
+    </ul>
+    <p style="font-weight:bold; color:#333; margin-bottom:8px;">🍜 面馆 / 甜品 / 其他</p>
+    <ul>
+      <li><span class="food-tag">小面</span><span class="food-location">📍江北区观音桥</span><strong>游晓面</strong>：<span class="food-dish">干溜豌杂面</span>。</li>
+      <li><span class="food-tag">小面</span><span class="food-location">📍渝中区七星岗</span><strong>临华老面馆</strong>：<span class="food-dish">鱼香肉丝面</span>。</li>
+      <li><span class="food-tag">小吃</span><span class="food-location">📍渝中区七星岗</span><strong>熨斗糕 + 三角粑</strong>：原味1元、果味2元。</li>
+      <li><span class="food-tag">凉菜</span><span class="food-location">📍渝中区七星岗</span><strong>纯阳酒家</strong>：<span class="food-dish">蒜泥白肉</span>和<span class="food-dish">豌豆汤</span>。</li>
+      <li><span class="food-tag">鸭火锅</span><span class="food-location">📍渝中区七星岗</span><strong>香鸭居</strong>：<span class="food-dish">口味鸭煲</span>。</li>
+      <li><span class="food-tag">甜品</span><span class="food-location">📍解放碑旁</span><strong>入饮甜汤</strong>：<span class="food-dish">艾草芋圆、陈皮红豆</span>。</li>
+      <li><span class="food-tag">中西餐</span><span class="food-location">📍紫薇路</span><strong>Eat Me Brunch</strong>：<span class="food-dish">omelet蘑菇芝士蛋饼、抹茶生巧慕斯</span>。</li>
+      <li><span class="food-tag">云南菜</span><span class="food-location">📍万象城</span><strong>都氏二当家</strong>：<span class="food-dish">火飘牛肉、老奶奶洋芋</span>。</li>
+      <li><span class="food-tag">小馆子</span><strong>格外小馆 gaagaa</strong>：<span class="food-dish">流沙咸蛋黄大虾、小炒黄牛肉</span>。</li>
+    </ul>
+    <p style="font-weight:bold; color:#333; margin-bottom:8px;">🚫 重庆旅游避雷小tips</p>
+    <ul>
+      <li>1. 先搜“哈儿果”是什么。</li>
+      <li>2. 不要相信任何司机/景点好心人带你去吃“正宗火锅”。</li>
+      <li>3. 过节期间提前问下开不开门，避免跑空。</li>
+      <li>4. 坐轻轨可能比打车和开车更快。</li>
+      <li>5. 洪崖洞在千厮门大桥上看同样漂亮，还更完整。</li>
+      <li>6. 不要在景区买特产，去超市可能会有惊喜。</li>
+    </ul>
+    <p style="font-weight:bold; color:#333; margin-bottom:8px;">💡 本地人选店经验</p>
+    <ul>
+      <li>老板亲力亲为、员工是本地阿姨、常有本地老顾客光顾的店，大概率不会差。</li>
+      <li>解放碑附近好吃的确实不多了，很多老店搬到了江北和南岸。</li>
+      <li>火锅可以随便吃，烧烤少碰。</li>
+    </ul>
+  </div>
+
+  <!-- 原始备忘 -->
+  <div class="memo-card" contenteditable="true" id="v2-memo-3">
+    <div class="memo-title">9月28日 · 十二背后飞拉达（荣耀版）</div>
+    <ul>
+      <li><strong>着装：</strong>紧身长裤、底厚防滑运动鞋（<span class="warn">千万别穿溯溪鞋</span>）、T恤+薄外套、无需帽子墨镜。</li>
+      <li><strong>装备：</strong>尽量不带包，酷玩中心免费存包。</li>
+      <li><strong>秘籍：</strong>进洞后主动走在队伍最后面，没人催、好拍照、收尾教练服务好。</li>
+    </ul>
+  </div>
+
+  <div class="memo-card" contenteditable="true" id="v2-memo-4">
+    <div class="memo-title">9月25日 · 梵净山关键提示</div>
+    <ul>
+      <li>车停东门，坐7:00直通车去西门，东门索道下山后直接在东门取车。</li>
+      <li>西线无索道全程徒步，轻装上阵。</li>
+    </ul>
+  </div>
+
+  <div class="memo-card" contenteditable="true" id="v2-memo-5">
+    <div class="memo-title">9月29日 · 黔灵山防猴守则</div>
+    <ul>
+      <li>不手提塑料袋、奶茶，零食水瓶装背包，拉链拉紧，背包尽量背胸前。</li>
+      <li>保持2米以上安全距离，不投喂、不逗弄、不对视，不尖叫奔跑。</li>
+      <li>手机不挂颈，帽子墨镜容易被抢。物品被抢不要硬抢，找保安。</li>
+    </ul>
+  </div>
+
+  <!-- 物品清单 -->
+  <div class="memo-card" contenteditable="true" id="v2-memo-6">
     <div class="memo-title">🎒 出行物品清单</div>
     <ul>
       <li><strong>证件：</strong>身份证、驾驶证、行驶证、现金、预约码、银行卡/信用卡、车险保单、紧急联系人卡</li>
@@ -456,39 +585,34 @@
     </ul>
   </div>
 
-  <!-- 原有备忘 -->
-  <div class="memo-card" contenteditable="true">
-    <div class="memo-title">9月28日 · 十二背后飞拉达（荣耀版）</div>
-    <ul>
-      <li><strong>着装：</strong>紧身长裤、底厚防滑运动鞋（<span class="warn">千万别穿溯溪鞋</span>，实测不防滑且硌脚）、T恤+薄外套、无需帽子墨镜。</li>
-      <li><strong>装备：</strong>尽量不带包，酷玩中心免费存包。</li>
-      <li><strong>秘籍：</strong>进洞后主动走在队伍最后面，没人催、好拍照、收尾教练服务好。</li>
-      <li><strong>交通：</strong>自驾车停地质公园地上停车场或客栈车位，步行至地心酷玩接待处（附近不好打车）。</li>
-    </ul>
-  </div>
-
-  <div class="memo-card" contenteditable="true">
-    <div class="memo-title">9月25日 · 梵净山关键提示</div>
-    <ul>
-      <li>车停东门，坐7:00直通车去西门，东门索道下山后直接在东门取车。</li>
-      <li>西线无索道全程徒步，轻装上阵。带防滑运动鞋、薄外套、水和能量零食。</li>
-    </ul>
-  </div>
-
-  <div class="memo-card" contenteditable="true">
-    <div class="memo-title">9月29日 · 黔灵山防猴守则</div>
-    <ul>
-      <li>不手提塑料袋、奶茶，零食水瓶装背包，拉链拉紧，背包尽量背胸前。</li>
-      <li>保持2米以上安全距离，不投喂、不逗弄、不对视，不尖叫奔跑。</li>
-      <li>手机不挂颈，帽子墨镜容易被抢。物品被抢不要硬抢，找保安。</li>
-    </ul>
-  </div>
-
-  <div class="footer">2026国庆贵州自驾行程 · 13天 · 深圳南山出发 · 混动自驾</div>
+  <div class="footer">2026国庆贵州+重庆自驾行程 · 13天 · 深圳南山出发 · 混动自驾</div>
 </div>
 
+<!-- Leaflet 地图 JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  // ============================================================
+  // Supabase 配置
+  // ============================================================
+  const SUPABASE_URL = 'https://fethocuptiegbsamrmau.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZldGhvY3VwdGllZ2JzYW1ybWF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MTAzMjUsImV4cCI6MjEwNTQ4NjMyNX0.6JXlztJBdKzkLz7WmZWi2RMldUMZEkzBz2hSgm84-iE';
+  const SYNC_ENABLED = !SUPABASE_URL.includes('YOUR_SUPABASE');
+
+  let supabaseClient = null;
+  const sessionId = Math.random().toString(36).slice(2, 10);
+  const editingElements = new Set();
+  const syncStatusEl = document.getElementById('syncStatus');
+  const syncTextEl = document.getElementById('syncText');
+
+  function setSyncStatus(state, text) {
+    if (!SYNC_ENABLED) return;
+    syncStatusEl.className = 'sync-status visible ' + state;
+    syncTextEl.textContent = text;
+    if (state === 'synced') setTimeout(() => syncStatusEl.classList.remove('visible'), 2000);
+  }
+
+  // ===== 地图初始化 =====
   const map = L.map('map', { zoomControl: false }).setView([26.8, 107.5], 6);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -498,25 +622,27 @@
     maxZoom: 18
   }).addTo(map);
 
+  // ===== 行程数据 =====
   const tripData = [
     { id: 'd1', day: '9.23', province: '广东省', name: '深圳→永州', coords: [[22.5431, 114.0579], [26.4203, 111.6133]], color: '#2980b9' },
     { id: 'd2', day: '9.24', province: '湖南省', name: '永州→梵净山', coords: [[26.4203, 111.6133], [27.9184, 108.6833]], color: '#e67e22' },
     { id: 'd3', day: '9.25', province: '贵州省', name: '梵净山游玩', coords: [[27.9184, 108.6833], [27.9184, 108.6833]], color: '#27ae60' },
     { id: 'd4', day: '9.26', province: '贵州省', name: '梵净山→镇远', coords: [[27.9184, 108.6833], [27.0500, 108.4167]], color: '#27ae60' },
     { id: 'd5', day: '9.27', province: '贵州省', name: '镇远→十二背后', coords: [[27.0500, 108.4167], [27.9500, 107.1500]], color: '#8e44ad' },
-    { id: 'd6', day: '9.28', province: '贵州省', name: '十二背后→贵阳', coords: [[27.9500, 107.1500], [26.6470, 106.6302]], color: '#8e44ad' },
-    { id: 'd7', day: '9.29', province: '贵州省', name: '贵阳游玩', coords: [[26.6470, 106.6302], [26.6470, 106.6302]], color: '#8e44ad' },
-    { id: 'd8', day: '9.30', province: '贵州省', name: '贵阳→黄果树', coords: [[26.6470, 106.6302], [25.9850, 105.6680]], color: '#c0392b' },
-    { id: 'd9', day: '10.1', province: '贵州省', name: '黄果树→荔波', coords: [[25.9850, 105.6680], [25.4120, 107.8810]], color: '#c0392b' },
-    { id: 'd10', day: '10.2', province: '贵州省', name: '荔波→肇兴', coords: [[25.4120, 107.8810], [25.8830, 109.1720]], color: '#c0392b' },
-    { id: 'd11', day: '10.3', province: '贵州省', name: '肇兴游玩', coords: [[25.8830, 109.1720], [25.8830, 109.1720]], color: '#c0392b' },
-    { id: 'd12', day: '10.4', province: '贵州省', name: '肇兴→柳州', coords: [[25.8830, 109.1720], [24.3260, 109.4280]], color: '#c0392b' },
-    { id: 'd13', day: '10.5', province: '广东省', name: '柳州→深圳', coords: [[24.3260, 109.4280], [22.5431, 114.0579]], color: '#2980b9' }
+    { id: 'd6', day: '9.28', province: '重庆市', name: '十二背后→重庆', coords: [[27.9500, 107.1500], [29.5630, 106.5516]], color: '#e74c3c' },
+    { id: 'd7', day: '9.29', province: '重庆市', name: '重庆游玩', coords: [[29.5630, 106.5516], [29.5630, 106.5516]], color: '#e74c3c' },
+    { id: 'd8', day: '9.30', province: '贵州省', name: '重庆→贵阳', coords: [[29.5630, 106.5516], [26.6470, 106.6302]], color: '#c0392b' },
+    { id: 'd9', day: '10.1', province: '贵州省', name: '贵阳游玩', coords: [[26.6470, 106.6302], [26.6470, 106.6302]], color: '#c0392b' },
+    { id: 'd10', day: '10.2', province: '贵州省', name: '贵阳游玩', coords: [[26.6470, 106.6302], [26.6470, 106.6302]], color: '#c0392b' },
+    { id: 'd11', day: '10.3', province: '贵州省', name: '贵阳→柳州', coords: [[26.6470, 106.6302], [24.3260, 109.4280]], color: '#c0392b' },
+    { id: 'd12', day: '10.4', province: '广西壮族自治区', name: '柳州游玩', coords: [[24.3260, 109.4280], [24.3260, 109.4280]], color: '#c0392b' },
+    { id: 'd13', day: '10.5', province: '广西壮族自治区', name: '柳州→深圳', coords: [[24.3260, 109.4280], [22.5431, 114.0579]], color: '#2980b9' }
   ];
 
   let currentLayer = null;
   const loadingEl = document.getElementById('loadingRoute');
 
+  // ===== 获取真实道路轨迹（OSRM） =====
   async function fetchRouteGeometry(start, end) {
     const url = `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`;
     try {
@@ -532,6 +658,7 @@
     }
   }
 
+  // ===== 绘制路线 =====
   async function drawRoute(province, dayId) {
     if (currentLayer) map.removeLayer(currentLayer);
     const group = L.layerGroup();
@@ -557,10 +684,8 @@
       let polylineCoords;
       
       if (start[0] === end[0] && start[1] === end[1]) {
-          polylineCoords = [
-            [start[0] - 0.01, start[1] - 0.01],
-            [start[0] + 0.01, start[1] + 0.01]
-          ];
+          // 同城游玩，画一个小圈
+          polylineCoords = [[start[0] - 0.01, start[1] - 0.01], [start[0] + 0.01, start[1] + 0.01]];
       } else {
           if (province !== '总览' && dayId && dayId !== '总览') {
               loadingEl.style.display = 'block';
@@ -594,6 +719,7 @@
     }
   }
 
+  // ===== 渲染标签 =====
   function renderTabs(province) {
     const dateTabsEl = document.getElementById('dateTabs');
     dateTabsEl.innerHTML = '';
@@ -618,7 +744,8 @@
     days.forEach(day => {
       const tab = document.createElement('div');
       tab.className = 'd-tab';
-      tab.innerHTML = `<span class="dot" style="background:${tripData.find(d => d.day === day).color}"></span>${day}`;
+      const color = tripData.find(d => d.day === day)?.color || '#ccc';
+      tab.innerHTML = `<span class="dot" style="background:${color}"></span>${day}`;
       tab.onclick = () => {
         document.querySelectorAll('.date-tabs .d-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
@@ -628,6 +755,7 @@
     });
   }
 
+  // ===== 绑定省份切换事件 =====
   document.querySelectorAll('.province-tabs .p-tab').forEach(tab => {
     tab.onclick = function() {
       document.querySelectorAll('.province-tabs .p-tab').forEach(t => t.classList.remove('active'));
@@ -638,8 +766,93 @@
     };
   });
 
+  // ===== 初始加载 =====
   renderTabs('总览');
   drawRoute('总览', '总览');
+
+  // ============================================================
+  // Supabase 数据同步逻辑
+  // ============================================================
+  function getEditableElements() {
+    return Array.from(document.querySelectorAll('[contenteditable="true"]'));
+  }
+
+  async function loadFromSupabase() {
+    if (!SYNC_ENABLED) return;
+    try {
+      setSyncStatus('syncing', '加载中...');
+      const { data, error } = await supabaseClient.from('trip_content').select('element_id, content');
+      if (error) throw error;
+      if (data && data.length > 0) {
+        data.forEach(row => {
+          const el = document.getElementById(row.element_id);
+          if (el && !editingElements.has(row.element_id)) el.innerHTML = row.content;
+        });
+        setSyncStatus('synced', '已加载');
+      } else {
+        await saveAllToSupabase();
+        setSyncStatus('synced', '已初始化');
+      }
+    } catch (e) { console.error('加载失败:', e); setSyncStatus('error', '加载失败'); }
+  }
+
+  async function saveAllToSupabase() {
+    const rows = getEditableElements().map(el => ({ element_id: el.id, content: el.innerHTML, updated_by: sessionId }));
+    const { error } = await supabaseClient.from('trip_content').upsert(rows, { onConflict: 'element_id' });
+    if (error) console.error('初始化保存失败:', error);
+  }
+
+  let saveTimer = null;
+  async function saveToSupabase(elementId) {
+    if (!SYNC_ENABLED) return;
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    setSyncStatus('syncing', '保存中...');
+    try {
+      const { error } = await supabaseClient.from('trip_content').upsert({
+        element_id: elementId, content: el.innerHTML, updated_by: sessionId
+      }, { onConflict: 'element_id' });
+      if (error) throw error;
+      setSyncStatus('synced', '已同步');
+    } catch (e) { console.error('保存失败:', e); setSyncStatus('error', '保存失败'); }
+  }
+
+  function debouncedSave(elementId) {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveToSupabase(elementId), 800);
+  }
+
+  function subscribeToChanges() {
+    if (!SYNC_ENABLED) return;
+    supabaseClient.channel('trip_content_changes').on('postgres_changes', {
+      event: '*', schema: 'public', table: 'trip_content'
+    }, payload => {
+      const row = payload.new;
+      if (!row || row.updated_by === sessionId) return;
+      if (editingElements.has(row.element_id)) return;
+      const el = document.getElementById(row.element_id);
+      if (el) { el.innerHTML = row.content; el.classList.add('remote-updated'); setTimeout(() => el.classList.remove('remote-updated'), 1500); }
+    }).subscribe();
+  }
+
+  function bindEditableEvents() {
+    getEditableElements().forEach(el => {
+      el.addEventListener('focus', () => editingElements.add(el.id));
+      el.addEventListener('blur', () => { editingElements.delete(el.id); debouncedSave(el.id); });
+      el.addEventListener('input', () => debouncedSave(el.id));
+    });
+  }
+
+  if (SYNC_ENABLED) {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    bindEditableEvents();
+    loadFromSupabase();
+    subscribeToChanges();
+    setSyncStatus('synced', '已连接');
+  } else {
+    syncStatusEl.className = 'sync-status visible error';
+    syncTextEl.textContent = '仅本地编辑';
+  }
 </script>
 </body>
 </html>
